@@ -21,7 +21,7 @@ cap = cv2.VideoCapture(video_path)
 ret, frame = cap.read()
 
 # Set up the video writer to save the output video, maintaining the original video's frame size and frame rate
-cap_out = cv2.VideoWriter(video_out_path, cv2.VideoWriter_fourcc(*'MP4V'),cap.get(cv2.CAP_PROP_FPS), (frame.shape[1], frame.shape[0]))
+cap_out = cv2.VideoWriter(video_out_path, cv2.VideoWriter_fourcc(*'mp4v'),cap.get(cv2.CAP_PROP_FPS), (frame.shape[1], frame.shape[0]))
 
 # Initialize object tracking with a YOLOv8 model for detection and a MARS model for tracking
 object_tracking = Object_tracking('Models/yolov8n.pt', 'Models/mars-small128.pb')
@@ -69,8 +69,7 @@ while ret:
                     (line2["point_2"]["x"], line2["point_2"]["y"]), (255, 0, 0), 2)
 
     # Perform object detection on the current frame, looking for specified classes (e.g., "cars", "truck")
-    a=object_tracking.detect(frame, detect_class=["car", "truck"])
-    
+    object_tracking.detect(frame, detect_class=["car", "truck"])
     # Perform object tracking based on the detections
     object_tracking.track(frame)
     # Loop through each tracked object
