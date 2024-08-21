@@ -1,6 +1,9 @@
 
 
 
+
+
+
 from ultralytics import YOLO
 from deep_sort.deep_sort.tracker import Tracker as DeepSortTracker
 from deep_sort.tools import generate_detections
@@ -25,7 +28,7 @@ class Object_tracking:
         metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
         self.tracker = DeepSortTracker(metric)
 
-    def detect(self,frame,detection_threshold=0.5,detect_class=None)->list:
+    def detect(self,frame,detection_threshold:float=0.5,detect_class:list=["all"])->list:
         results = self.Detection_Model(frame)
         detections = []
         for result in results:
@@ -36,19 +39,17 @@ class Object_tracking:
                 y1 = int(y1)
                 y2 = int(y2)
                 class_id = int(class_id)
-                
-                if detect_class !=None:
-                    if self.Detection_Model.names[class_id] != detect_class :
-                        continue
+                if "all" not in detect_class :                
+                    if self.Detection_Model.names[class_id] not in detect_class:
+                            continue
                 if score > detection_threshold:
-                    detections.append([x1, y1, x2, y2, score,class_id])
-        self.detections=detections
-        return detections
+                    detections.append([x1, y1, x2, y2, score,self.Detection_Model.names[class_id]])
+        self.detections=detections.copy()
+        return detections.copy()
 
     def track(self, frame, detections=None):
         if detections==None:
-            detections=self.detections
-        
+            detections=self.detections.copy()
         if len(detections) == 0:
             self.tracker.predict()
             self.tracker.update([])  
@@ -56,14 +57,12 @@ class Object_tracking:
             return
         bboxes = np.asarray([d[:-2] for d in detections])
         bboxes[:, 2:] = bboxes[:, 2:] - bboxes[:, 0:2]
-        scores = [d[-1] for d in detections]
-
+        scores = [d[-2] for d in detections]
         features = self.Encoding_Mode(frame, bboxes)
 
         dets = []
         for bbox_id, bbox in enumerate(bboxes):
             dets.append(Detection(bbox, scores[bbox_id], features[bbox_id]))
-
         self.tracker.predict()
         self.tracker.update(dets)
         self.update_tracks()
